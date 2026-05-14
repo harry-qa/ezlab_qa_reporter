@@ -14,6 +14,40 @@
     }
     .container { max-width: 680px; margin: 0 auto; }
 
+    /* ── 로그인 ── */
+    #loginWrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .login-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .login-card p  { font-size: 13px; color: #888; margin-bottom: 28px; }
+    .login-card input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      font-family: inherit;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    .login-card input:focus { outline: none; border-color: #1a1a1a; }
+    .login-err { font-size: 13px; color: #c53030; margin-bottom: 10px; min-height: 18px; }
+
+    /* ── 공통 헤더 ── */
     header {
       background: #1a1a1a;
       color: white;
@@ -91,7 +125,7 @@
     label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
     label .req { color: #e53e3e; margin-left: 2px; }
 
-    input[type="text"], select, textarea {
+    input[type="text"], input[type="password"], select, textarea {
       width: 100%;
       padding: 10px 12px;
       border: 1.5px solid #e8e8e8;
@@ -102,10 +136,8 @@
       font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
     }
-    input[type="text"]:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #1a1a1a;
-      background: white;
+    input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+      outline: none; border-color: #1a1a1a; background: white;
     }
     input.auto { background: #f0f7ff; border-color: #bee3f8; color: #2b6cb0; font-weight: 500; }
     input[readonly] { cursor: default; }
@@ -139,6 +171,36 @@
     .chip:hover:not(.on) { border-color: #aaa; color: #111; }
     .chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
 
+    /* 디바이스 리스트 */
+    .device-group { margin-bottom: 12px; }
+    .device-group-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+    }
+    .device-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .device-chip {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1.5px solid #ddd;
+      background: white;
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+      color: #444;
+    }
+    .device-chip:hover:not(.on) { border-color: #aaa; color: #111; }
+    .device-chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
+
     .session-chip {
       display: inline-flex;
       align-items: center;
@@ -160,21 +222,9 @@
       font-weight: 500;
       display: none;
     }
-    .url-status.ok  { background: #f0fff4; border: 1.5px solid #9ae6b4; color: #276749; display: block; }
-    .url-status.err { background: #fff5f5; border: 1.5px solid #feb2b2; color: #c53030; display: block; }
+    .url-status.ok      { background: #f0fff4; border: 1.5px solid #9ae6b4; color: #276749; display: block; }
+    .url-status.err     { background: #fff5f5; border: 1.5px solid #feb2b2; color: #c53030; display: block; }
     .url-status.loading { background: #fffaf0; border: 1.5px solid #fbd38d; color: #744210; display: block; }
-
-    .env-preview {
-      margin-top: 8px;
-      padding: 10px 12px;
-      background: #f0f7ff;
-      border: 1.5px solid #bee3f8;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #2b6cb0;
-      font-weight: 500;
-    }
-    .env-preview .label { font-size: 11px; color: #90cdf4; margin-bottom: 3px; }
 
     .btn-primary {
       width: 100%;
@@ -232,218 +282,302 @@
   </style>
 </head>
 <body>
-<div class="container">
 
-  <header>
-    <div>
-      <h1>QA 버그 리포터</h1>
-      <p id="headerSub">이지랩 · Mobisoft</p>
+  <!-- ══ 로그인 화면 ══ -->
+  <div id="loginWrap">
+    <div class="login-card">
+      <h2>QA 버그 리포터</h2>
+      <p>이지랩 · Mobisoft</p>
+      <div class="login-err" id="loginErr"></div>
+      <input type="password" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="btn-primary" onclick="doLogin()">로그인</button>
     </div>
-    <div class="session-badge" id="sessionBadge" style="display:none" onclick="resetSession()">세션 변경</div>
-  </header>
-
-  <div class="card">
-
-    <!-- ══ STEP 1: 세션 설정 ══ -->
-    <div id="stepSession">
-      <p class="step-title">QA 세션 시작</p>
-      <p class="step-sub">이번 QA 에픽의 노션 페이지 URL을 붙여넣으면<br>이슈 보드 DB를 자동으로 찾아서 연결합니다.</p>
-
-      <div class="section">
-        <div class="section-title">보고자 *</div>
-        <div class="chips" id="reporterChips"></div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">QA 에픽 페이지 URL *</div>
-        <div class="field">
-          <input type="text" id="pageUrl" placeholder="https://www.notion.so/...">
-          <div class="url-status" id="urlStatus"></div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">대상 제품 *</div>
-        <div class="product-grid" id="sessionProducts">
-          <div class="product-btn" data-v="이지캡쳐">이지캡쳐</div>
-          <div class="product-btn" data-v="이지다운">이지다운</div>
-          <div class="product-btn" data-v="이지파인더">이지파인더</div>
-          <div class="product-btn" data-v="이지집">이지집</div>
-          <div class="product-btn" data-v="이지메모">이지메모</div>
-          <div class="product-btn" data-v="이지리더">이지리더</div>
-          <div class="product-btn" data-v="이지랩">이지랩</div>
-          <div class="product-btn" data-v="이지캠">이지캠</div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">버전 *</div>
-        <div class="field">
-          <input type="text" id="sessionVersion" placeholder="예: 1.0.0">
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">기본 플랫폼 *</div>
-        <div class="chips" id="sessionPlatforms">
-          <span class="chip" data-v="Win10">Win10</span>
-          <span class="chip" data-v="Win11">Win11</span>
-          <span class="chip" data-v="VM">VM</span>
-          <span class="chip" data-v="AOS">AOS</span>
-          <span class="chip" data-v="iOS">iOS</span>
-          <span class="chip" data-v="ARM">ARM</span>
-        </div>
-        <div class="env-preview">
-          <div class="label">테스트 환경 미리보기</div>
-          <span id="sessionEnvText">플랫폼을 선택하면 자동 완성됩니다</span>
-        </div>
-      </div>
-
-      <button class="btn-primary" id="startBtn" onclick="startSession()">QA 시작 →</button>
-    </div>
-
-    <!-- ══ STEP 2: 버그 입력 폼 ══ -->
-    <div id="stepForm">
-      <form id="bugForm">
-
-        <div class="section">
-          <div class="section-title">기본 정보</div>
-          <div class="field">
-            <label>제목 <span class="req">*</span></label>
-            <input type="text" id="title" placeholder="버그 제목을 간결하게 입력하세요">
-          </div>
-          <div class="grid-2">
-            <div class="field">
-              <label>심각도 <span class="req">*</span></label>
-              <select id="severity">
-                <option value="">선택</option>
-                <option value="Blocker">Blocker</option>
-                <option value="Critical">Critical</option>
-                <option value="Major">Major</option>
-                <option value="Minor">Minor</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>발생 시점 <span class="req">*</span></label>
-              <select id="occurrence">
-                <option value="">선택</option>
-                <option value="신규">신규</option>
-                <option value="회귀">회귀</option>
-                <option value="기존">기존</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>버전명</label>
-            <input type="text" id="version" class="auto" placeholder="세션에서 자동 입력">
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">대상 제품 &amp; 플랫폼</div>
-          <div class="field">
-            <label>대상 제품</label>
-            <div class="chips" id="products"></div>
-          </div>
-          <div class="field">
-            <label>플랫폼 <span class="req">*</span></label>
-            <div class="chips" id="platforms">
-              <span class="chip" data-v="Win10">Win10</span>
-              <span class="chip" data-v="Win11">Win11</span>
-              <span class="chip" data-v="VM">VM</span>
-              <span class="chip" data-v="AOS">AOS</span>
-              <span class="chip" data-v="iOS">iOS</span>
-              <span class="chip" data-v="ARM">ARM</span>
-            </div>
-          </div>
-          <div class="field">
-            <label>테스트 환경</label>
-            <input type="text" id="environment" class="auto" readonly>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">테스트 정보</div>
-          <div class="field">
-            <label>사전 조건</label>
-            <textarea id="precondition" placeholder="테스트 전 필요한 조건 또는 환경을 입력하세요"></textarea>
-          </div>
-          <div class="field">
-            <label>테스트 절차 <span class="req">*</span></label>
-            <textarea id="procedure" placeholder="1. &#10;2. &#10;3. " style="min-height:100px"></textarea>
-          </div>
-          <div class="field">
-            <label>테스트 결과 <span class="req">*</span></label>
-            <textarea id="actual" placeholder="실제로 발생한 결과를 입력하세요"></textarea>
-          </div>
-          <div class="field">
-            <label>기대 결과 <span class="req">*</span></label>
-            <textarea id="expected" placeholder="정상적으로 기대되는 결과를 입력하세요"></textarea>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary" id="submitBtn">Notion에 버그 티켓 생성</button>
-        <button type="button" class="btn-secondary" onclick="resetSession()">세션 변경</button>
-      </form>
-    </div>
-
   </div>
-</div>
+
+  <!-- ══ 메인 앱 ══ -->
+  <div class="container" id="appWrap" style="display:none">
+    <header>
+      <div>
+        <h1>QA 버그 리포터</h1>
+        <p id="headerSub">이지랩 · Mobisoft</p>
+      </div>
+      <div class="session-badge" id="sessionBadge" style="display:none" onclick="resetSession()">세션 변경</div>
+    </header>
+
+    <div class="card">
+
+      <!-- ══ STEP 1: 세션 설정 ══ -->
+      <div id="stepSession">
+        <p class="step-title">QA 세션 시작</p>
+        <p class="step-sub">이번 QA 에픽의 노션 페이지 URL을 붙여넣으면<br>이슈 보드 DB를 자동으로 찾아서 연결합니다.</p>
+
+        <div class="section">
+          <div class="section-title">보고자 *</div>
+          <div class="chips" id="reporterChips"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">QA 에픽 페이지 URL *</div>
+          <div class="field">
+            <input type="text" id="pageUrl" placeholder="https://www.notion.so/...">
+            <div class="url-status" id="urlStatus"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">대상 제품 *</div>
+          <div class="product-grid" id="sessionProducts">
+            <div class="product-btn" data-v="이지캡쳐">이지캡쳐</div>
+            <div class="product-btn" data-v="이지다운">이지다운</div>
+            <div class="product-btn" data-v="이지파인더">이지파인더</div>
+            <div class="product-btn" data-v="이지집">이지집</div>
+            <div class="product-btn" data-v="이지메모">이지메모</div>
+            <div class="product-btn" data-v="이지리더">이지리더</div>
+            <div class="product-btn" data-v="이지랩">이지랩</div>
+            <div class="product-btn" data-v="이지캠">이지캠</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">버전 *</div>
+          <div class="field">
+            <input type="text" id="sessionVersion" placeholder="예: 1.0.0">
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">기본 테스트 디바이스 *</div>
+          <div id="sessionDevices">
+            <div class="device-group">
+              <div class="device-group-label">Windows</div>
+              <div class="device-list" id="sessionWinDevices"></div>
+            </div>
+            <div class="device-group" style="margin-top:12px">
+              <div class="device-group-label">Android (AOS)</div>
+              <div class="device-list" id="sessionAosDevices"></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="startSession()">QA 시작 →</button>
+      </div>
+
+      <!-- ══ STEP 2: 버그 입력 폼 ══ -->
+      <div id="stepForm">
+        <form id="bugForm">
+
+          <div class="section">
+            <div class="section-title">기본 정보</div>
+            <div class="field">
+              <label>제목 <span class="req">*</span></label>
+              <input type="text" id="title" placeholder="버그 제목을 간결하게 입력하세요">
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>심각도 <span class="req">*</span></label>
+                <select id="severity">
+                  <option value="">선택</option>
+                  <option value="Blocker">Blocker</option>
+                  <option value="Critical">Critical</option>
+                  <option value="Major">Major</option>
+                  <option value="Minor">Minor</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>발생 시점 <span class="req">*</span></label>
+                <select id="occurrence">
+                  <option value="">선택</option>
+                  <option value="신규">신규</option>
+                  <option value="회귀">회귀</option>
+                  <option value="기존">기존</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>버전명</label>
+              <input type="text" id="version" class="auto" placeholder="세션에서 자동 입력">
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">대상 제품 &amp; 테스트 디바이스</div>
+            <div class="field">
+              <label>대상 제품</label>
+              <div class="chips" id="products"></div>
+            </div>
+            <div class="field">
+              <label>테스트 디바이스 <span class="req">*</span></label>
+              <div id="formDevices">
+                <div class="device-group">
+                  <div class="device-group-label">Windows</div>
+                  <div class="device-list" id="formWinDevices"></div>
+                </div>
+                <div class="device-group" style="margin-top:10px">
+                  <div class="device-group-label">Android (AOS)</div>
+                  <div class="device-list" id="formAosDevices"></div>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>테스트 환경</label>
+              <input type="text" id="environment" class="auto" readonly placeholder="디바이스 선택 시 자동 완성">
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">테스트 정보</div>
+            <div class="field">
+              <label>사전 조건</label>
+              <textarea id="precondition" placeholder="테스트 전 필요한 조건 또는 환경을 입력하세요"></textarea>
+            </div>
+            <div class="field">
+              <label>테스트 절차 <span class="req">*</span></label>
+              <textarea id="procedure" placeholder="1. &#10;2. &#10;3. " style="min-height:100px"></textarea>
+            </div>
+            <div class="field">
+              <label>테스트 결과 <span class="req">*</span></label>
+              <textarea id="actual" placeholder="실제로 발생한 결과를 입력하세요"></textarea>
+            </div>
+            <div class="field">
+              <label>기대 결과 <span class="req">*</span></label>
+              <textarea id="expected" placeholder="정상적으로 기대되는 결과를 입력하세요"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">Notion에 버그 티켓 생성</button>
+          <button type="button" class="btn-secondary" onclick="resetSession()">세션 변경</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── 데이터 정의 ──
   const REPORTERS = [
     { name: '이수빈', id: '31fd872b-594c-81d5-b6ea-0002de903282' },
     { name: '박주철', id: '333d872b-594c-8169-8e13-000274766e61' },
   ];
 
-  let session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {}, reporter: null };
+  const DEVICES = {
+    windows: [
+      { label: 'Win11 Pro (25H2)',     platform: 'Win11' },
+      { label: 'Win11 Pro Arm (25H2)', platform: 'ARM'   },
+      { label: 'VM Win10 Pro (22H2)',  platform: 'VM'    },
+    ],
+    aos: [
+      { label: 'A7 (AOS 9)',     platform: 'AOS' },
+      { label: 'A24 (AOS 14)',   platform: 'AOS' },
+      { label: 'Z Flip3 (AOS 15)', platform: 'AOS' },
+      { label: 'S22+ (AOS 16)',  platform: 'AOS' },
+      { label: 'Fold6 (AOS 16)', platform: 'AOS' },
+      { label: 'S23 (AOS 16)',   platform: 'AOS' },
+    ],
+  };
 
-  function platformsToEnv(platforms) {
-    const hasVM  = platforms.includes('VM');
-    const hasW10 = platforms.includes('Win10');
-    const hasW11 = platforms.includes('Win11');
-    const parts  = [];
-    if (hasVM && hasW11)      parts.push('VM Windows 11');
-    else if (hasVM && hasW10) parts.push('VM Windows 10');
-    else if (hasVM)           parts.push('VM Windows');
-    if (!hasVM && hasW11)     parts.push('Windows 11');
-    if (!hasVM && hasW10)     parts.push('Windows 10');
-    if (platforms.includes('ARM')) parts.push('ARM Windows');
-    if (platforms.includes('AOS')) parts.push('Android (AOS)');
-    if (platforms.includes('iOS')) parts.push('iOS');
-    return parts.join(', ');
+  let session = { product: null, version: '', devices: [], dbId: null, fieldTypes: {}, reporter: null };
+
+  // ── 로그인 ──
+  if (localStorage.getItem('qaLoggedIn') === 'true') showApp();
+
+  async function doLogin() {
+    const pw  = document.getElementById('pwInput').value;
+    const err = document.getElementById('loginErr');
+    if (!pw) { err.textContent = '비밀번호를 입력해주세요'; return; }
+
+    try {
+      const res  = await fetch('/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        localStorage.setItem('qaLoggedIn', 'true');
+        showApp();
+      } else {
+        err.textContent = data.error || '비밀번호가 틀렸습니다';
+      }
+    } catch {
+      err.textContent = '네트워크 오류가 발생했습니다';
+    }
   }
 
-  // 보고자 칩 렌더링
-  const reporterBox = document.getElementById('reporterChips');
-  REPORTERS.forEach(r => {
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.textContent = r.name;
-    chip.dataset.id = r.id;
-    chip.addEventListener('click', () => {
-      reporterBox.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
-      chip.classList.add('on');
-      session.reporter = { name: r.name, id: r.id };
-    });
-    reporterBox.appendChild(chip);
-  });
+  function showApp() {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display   = 'block';
+    initApp();
+  }
 
-  // URL 입력 시 자동 검증
-  let resolveTimer = null;
-  document.getElementById('pageUrl').addEventListener('input', () => {
-    clearTimeout(resolveTimer);
-    resolveTimer = setTimeout(resolveDb, 600);
-  });
+  function initApp() {
+    // 보고자 칩
+    const reporterBox = document.getElementById('reporterChips');
+    REPORTERS.forEach(r => {
+      const chip = document.createElement('span');
+      chip.className   = 'chip';
+      chip.textContent = r.name;
+      chip.addEventListener('click', () => {
+        reporterBox.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+        chip.classList.add('on');
+        session.reporter = r;
+      });
+      reporterBox.appendChild(chip);
+    });
+
+    // 세션 디바이스 칩
+    renderDeviceChips('sessionWinDevices', DEVICES.windows, true);
+    renderDeviceChips('sessionAosDevices', DEVICES.aos,     true);
+
+    // 폼 디바이스 칩
+    renderDeviceChips('formWinDevices', DEVICES.windows, false);
+    renderDeviceChips('formAosDevices', DEVICES.aos,     false);
+
+    // 제품 선택
+    document.querySelectorAll('#sessionProducts .product-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#sessionProducts .product-btn').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+      });
+    });
+
+    // URL 자동 검증
+    let resolveTimer = null;
+    document.getElementById('pageUrl').addEventListener('input', () => {
+      clearTimeout(resolveTimer);
+      resolveTimer = setTimeout(resolveDb, 600);
+    });
+  }
+
+  function renderDeviceChips(containerId, devices, isSession) {
+    const container = document.getElementById(containerId);
+    devices.forEach(d => {
+      const chip = document.createElement('span');
+      chip.className       = 'device-chip';
+      chip.textContent     = d.label;
+      chip.dataset.label   = d.label;
+      chip.dataset.platform = d.platform;
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('on');
+        if (!isSession) updateFormEnv();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function updateFormEnv() {
+    const selected = [...document.querySelectorAll('#formWinDevices .device-chip.on, #formAosDevices .device-chip.on')]
+      .map(c => c.dataset.label);
+    document.getElementById('environment').value = selected.join(', ');
+  }
 
   async function resolveDb() {
-    const url = document.getElementById('pageUrl').value.trim();
+    const url      = document.getElementById('pageUrl').value.trim();
     const statusEl = document.getElementById('urlStatus');
     if (!url) { statusEl.className = 'url-status'; session.dbId = null; return; }
 
-    statusEl.className = 'url-status loading';
+    statusEl.className   = 'url-status loading';
     statusEl.textContent = '이슈 보드 DB 찾는 중...';
 
     try {
@@ -454,76 +588,51 @@
       });
       const data = await res.json();
       if (res.ok) {
-        session.dbId = data.dbId;
+        session.dbId       = data.dbId;
         session.fieldTypes = data.fieldTypes || {};
-        statusEl.className = 'url-status ok';
-        statusEl.textContent = `이슈 보드 연결 완료`;
+        statusEl.className   = 'url-status ok';
+        statusEl.textContent = '이슈 보드 연결 완료';
       } else {
-        session.dbId = null;
-        statusEl.className = 'url-status err';
+        session.dbId         = null;
+        statusEl.className   = 'url-status err';
         statusEl.textContent = data.error || '연결 실패';
       }
     } catch {
-      session.dbId = null;
-      statusEl.className = 'url-status err';
+      session.dbId         = null;
+      statusEl.className   = 'url-status err';
       statusEl.textContent = '네트워크 오류';
     }
   }
 
-  // 제품 선택
-  document.querySelectorAll('#sessionProducts .product-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('#sessionProducts .product-btn').forEach(x => x.classList.remove('on'));
-      b.classList.add('on');
-    });
-  });
-
-  // 세션 플랫폼 → 환경 미리보기
-  document.querySelectorAll('#sessionPlatforms .chip').forEach(c => {
-    c.addEventListener('click', () => {
-      c.classList.toggle('on');
-      const sel = [...document.querySelectorAll('#sessionPlatforms .chip.on')].map(x => x.dataset.v);
-      document.getElementById('sessionEnvText').textContent = platformsToEnv(sel) || '플랫폼을 선택하면 자동 완성됩니다';
-    });
-  });
-
-  // 버그 폼 플랫폼 → 환경 자동 완성
-  document.querySelectorAll('#platforms .chip').forEach(c => {
-    c.addEventListener('click', () => {
-      c.classList.toggle('on');
-      const sel = [...document.querySelectorAll('#platforms .chip.on')].map(x => x.dataset.v);
-      document.getElementById('environment').value = platformsToEnv(sel);
-    });
-  });
-
-  async function startSession() {
+  function startSession() {
     const product   = document.querySelector('#sessionProducts .product-btn.on');
     const version   = document.getElementById('sessionVersion').value.trim();
-    const platforms = [...document.querySelectorAll('#sessionPlatforms .chip.on')];
+    const devices   = [...document.querySelectorAll('#sessionWinDevices .device-chip.on, #sessionAosDevices .device-chip.on')];
 
     if (!session.reporter) { toast('보고자를 선택해주세요', true); return; }
     if (!session.dbId)     { toast('노션 페이지 URL을 먼저 입력해주세요', true); return; }
     if (!product)          { toast('대상 제품을 선택해주세요', true); return; }
     if (!version)          { toast('버전을 입력해주세요', true); return; }
-    if (!platforms.length) { toast('플랫폼을 하나 이상 선택해주세요', true); return; }
+    if (!devices.length)   { toast('테스트 디바이스를 하나 이상 선택해주세요', true); return; }
 
-    session.product   = product.dataset.v;
-    session.version   = version;
-    session.platforms = platforms.map(p => p.dataset.v);
+    session.product = product.dataset.v;
+    session.version = version;
+    session.devices = devices.map(d => ({ label: d.dataset.label, platform: d.dataset.platform }));
 
+    // 폼 초기화 및 세션 기본값 반영
     document.getElementById('products').innerHTML =
       `<span class="session-chip">${session.product}</span>`;
     document.getElementById('version').value = session.version;
 
-    document.querySelectorAll('#platforms .chip').forEach(c => {
-      if (session.platforms.includes(c.dataset.v)) c.classList.add('on');
+    // 폼 디바이스 세션 기본값 선택
+    document.querySelectorAll('#formWinDevices .device-chip, #formAosDevices .device-chip').forEach(c => {
+      if (session.devices.find(d => d.label === c.dataset.label)) c.classList.add('on');
       else c.classList.remove('on');
     });
-    const env = platformsToEnv(session.platforms);
-    document.getElementById('environment').value = env;
+    updateFormEnv();
 
     document.getElementById('headerSub').textContent =
-      `${session.product} v${session.version} · ${session.reporter.name} · ${session.platforms.join(', ')}`;
+      `${session.product} v${session.version} · ${session.reporter.name}`;
     document.getElementById('sessionBadge').style.display = 'block';
 
     document.getElementById('stepSession').style.display = 'none';
@@ -531,16 +640,15 @@
   }
 
   function resetSession() {
-    session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {}, reporter: null };
-    reporterBox.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+    session = { product: null, version: '', devices: [], dbId: null, fieldTypes: {}, reporter: null };
     document.getElementById('stepSession').style.display = 'block';
     document.getElementById('stepForm').style.display    = 'none';
     document.getElementById('sessionBadge').style.display = 'none';
     document.getElementById('headerSub').textContent = '이지랩 · Mobisoft';
-    document.getElementById('pageUrl').value = '';
-    document.getElementById('urlStatus').className = 'url-status';
+    document.getElementById('pageUrl').value         = '';
+    document.getElementById('urlStatus').className   = 'url-status';
     document.getElementById('bugForm').reset();
-    document.querySelectorAll('#platforms .chip').forEach(c => c.classList.remove('on'));
+    document.querySelectorAll('.device-chip, .chip').forEach(c => c.classList.remove('on'));
     document.getElementById('environment').value = '';
   }
 
@@ -561,20 +669,23 @@
     const title      = document.getElementById('title').value.trim();
     const severity   = document.getElementById('severity').value;
     const occurrence = document.getElementById('occurrence').value;
-    const platforms  = [...document.querySelectorAll('#platforms .chip.on')].map(c => ({ name: c.dataset.v }));
     const procedure  = document.getElementById('procedure').value.trim();
     const actual     = document.getElementById('actual').value.trim();
     const expected   = document.getElementById('expected').value.trim();
 
+    const selectedDevices = [...document.querySelectorAll('#formWinDevices .device-chip.on, #formAosDevices .device-chip.on')];
+
     if (!title || !severity || !occurrence) { toast('필수 항목(*)을 모두 입력해주세요', true); return; }
-    if (!platforms.length)                  { toast('플랫폼을 하나 이상 선택해주세요', true); return; }
+    if (!selectedDevices.length)            { toast('테스트 디바이스를 선택해주세요', true); return; }
     if (!procedure || !actual || !expected) { toast('테스트 절차 / 결과 / 기대 결과는 필수입니다', true); return; }
+
+    const ft        = session.fieldTypes;
+    const platforms = [...new Set(selectedDevices.map(d => d.dataset.platform))];
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = '생성 중...';
 
-    const ft = session.fieldTypes;
     const properties = {
       '이름':        { title: [{ text: { content: title } }] },
       '심각도':      { select: { name: severity } },
@@ -583,20 +694,20 @@
                        ? { select: { name: session.product } }
                        : { multi_select: [{ name: session.product }] },
       '플랫폼':      ft['플랫폼'] === 'multi_select'
-                       ? { multi_select: platforms }
-                       : { select: { name: platforms[0]?.name ?? '' } },
+                       ? { multi_select: platforms.map(p => ({ name: p })) }
+                       : { select: { name: platforms[0] } },
       '상태':        { status: { name: '시작 전' } },
       '버전명':      richText(session.version),
       '테스트 절차': richText(procedure),
       '테스트 결과': richText(actual),
       '기대 결과':   richText(expected),
+      '보고자':      { people: [{ id: session.reporter.id }] },
     };
 
     const env    = document.getElementById('environment').value.trim();
     const precond = document.getElementById('precondition').value.trim();
     if (env)    properties['테스트 환경'] = richText(env);
-    if (precond) properties['사전 조건']  = richText(precond);
-    if (session.reporter) properties['보고자'] = { people: [{ id: session.reporter.id }] };
+    if (precond) properties['사전 조건'] = richText(precond);
 
     try {
       const res  = await fetch('/create', {
