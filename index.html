@@ -552,12 +552,12 @@
       '이름':        { title: [{ text: { content: title } }] },
       '심각도':      { select: { name: severity } },
       '발생 시점':   { select: { name: occurrence } },
-      '대상 제품':   ft['대상 제품'] === 'select'
-                       ? { select: { name: session.product } }
-                       : { multi_select: [{ name: session.product }] },
-      '플랫폼':      ft['플랫폼'] === 'select'
-                       ? { select: { name: platforms[0]?.name ?? '' } }
-                       : { multi_select: platforms },
+      '대상 제품':   ft['대상 제품'] === 'multi_select'
+                       ? { multi_select: [{ name: session.product }] }
+                       : { select: { name: session.product } },
+      '플랫폼':      ft['플랫폼'] === 'multi_select'
+                       ? { multi_select: platforms }
+                       : { select: { name: platforms[0]?.name ?? '' } },
       '상태':        { status: { name: '시작 전' } },
       '버전명':      richText(session.version),
       '테스트 절차': richText(procedure),
