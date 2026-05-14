@@ -2,7 +2,6 @@
   "rewrites": [
     { "source": "/resolve-db", "destination": "/api/resolve-db" },
     { "source": "/create",     "destination": "/api/create" },
-    { "source": "/auth",       "destination": "/api/auth" },
     { "source": "/",           "destination": "/index.html" }
   ]
 }
