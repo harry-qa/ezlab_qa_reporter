@@ -517,7 +517,7 @@
   let session = { product: null, version: '', devices: [], dbId: null, fieldTypes: {}, reporter: null };
 
   // ── 로그인 ──
-  if (localStorage.getItem('qaLoggedIn') === 'true') showApp();
+  if (sessionStorage.getItem('qaLoggedIn') === 'true') showApp();
 
   function doLogin() {
     const id  = document.getElementById('idInput').value.trim();
@@ -525,7 +525,7 @@
     const err = document.getElementById('loginErr');
     if (!id || !pw) { err.textContent = '아이디와 비밀번호를 입력해주세요'; return; }
     if (id === 'ezlab-qa' && pw === 'qa1234!!') {
-      localStorage.setItem('qaLoggedIn', 'true');
+      sessionStorage.setItem('qaLoggedIn', 'true');
       showApp();
     } else {
       err.textContent = '아이디 또는 비밀번호가 틀렸습니다';
