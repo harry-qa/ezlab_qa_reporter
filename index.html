@@ -388,7 +388,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let session = { product: null, version: '', platforms: [], dbId: null };
+  let session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {} };
 
   function platformsToEnv(platforms) {
     const hasVM  = platforms.includes('VM');
@@ -430,6 +430,7 @@
       const data = await res.json();
       if (res.ok) {
         session.dbId = data.dbId;
+        session.fieldTypes = data.fieldTypes || {};
         statusEl.className = 'url-status ok';
         statusEl.textContent = `이슈 보드 연결 완료`;
       } else {
@@ -546,12 +547,17 @@
     btn.disabled = true;
     btn.textContent = '생성 중...';
 
+    const ft = session.fieldTypes;
     const properties = {
       '이름':        { title: [{ text: { content: title } }] },
       '심각도':      { select: { name: severity } },
       '발생 시점':   { select: { name: occurrence } },
-      '대상 제품':   { multi_select: [{ name: session.product }] },
-      '플랫폼':      { multi_select: platforms },
+      '대상 제품':   ft['대상 제품'] === 'select'
+                       ? { select: { name: session.product } }
+                       : { multi_select: [{ name: session.product }] },
+      '플랫폼':      ft['플랫폼'] === 'select'
+                       ? { select: { name: platforms[0]?.name ?? '' } }
+                       : { multi_select: platforms },
       '상태':        { status: { name: '시작 전' } },
       '버전명':      richText(session.version),
       '테스트 절차': richText(procedure),
