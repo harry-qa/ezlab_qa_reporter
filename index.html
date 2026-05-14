@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA 버그 리포터</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: #f0f0f0;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+    .container { max-width: 680px; margin: 0 auto; }
+
+    header {
+      background: #1a1a1a;
+      color: white;
+      padding: 22px 24px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    header p  { font-size: 12px; color: #888; margin-top: 4px; }
+    .session-badge {
+      background: #333;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+    .session-badge:hover { background: #555; }
+
+    .card {
+      background: white;
+      border-radius: 0 0 12px 12px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    #stepSession { display: block; }
+    #stepForm    { display: none; }
+
+    .step-title { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 6px; }
+    .step-sub   { font-size: 13px; color: #888; margin-bottom: 24px; line-height: 1.5; }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 480px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .product-btn {
+      padding: 14px 8px;
+      border-radius: 10px;
+      border: 2px solid #e8e8e8;
+      background: #fafafa;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+      user-select: none;
+    }
+    .product-btn:hover:not(.on) { border-color: #bbb; color: #111; }
+    .product-btn.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+    label .req { color: #e53e3e; margin-left: 2px; }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #222;
+      background: #fafafa;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #1a1a1a;
+      background: white;
+    }
+    input.auto { background: #f0f7ff; border-color: #bee3f8; color: #2b6cb0; font-weight: 500; }
+    input[readonly] { cursor: default; }
+    textarea { resize: vertical; min-height: 84px; line-height: 1.6; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 10px 12px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 8px;
+      background: #fafafa;
+      min-height: 46px;
+    }
+    .chip {
+      padding: 5px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1.5px solid #ddd;
+      background: white;
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+      color: #444;
+    }
+    .chip:hover:not(.on) { border-color: #aaa; color: #111; }
+    .chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
+
+    .session-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 2px solid #1a1a1a;
+      background: #1a1a1a;
+      color: white;
+    }
+
+    .url-status {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+    }
+    .url-status.ok  { background: #f0fff4; border: 1.5px solid #9ae6b4; color: #276749; display: block; }
+    .url-status.err { background: #fff5f5; border: 1.5px solid #feb2b2; color: #c53030; display: block; }
+    .url-status.loading { background: #fffaf0; border: 1.5px solid #fbd38d; color: #744210; display: block; }
+
+    .env-preview {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f0f7ff;
+      border: 1.5px solid #bee3f8;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #2b6cb0;
+      font-weight: 500;
+    }
+    .env-preview .label { font-size: 11px; color: #90cdf4; margin-bottom: 3px; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      letter-spacing: -0.2px;
+    }
+    .btn-primary:hover { background: #333; }
+    .btn-primary:disabled { background: #bbb; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #444;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 8px;
+    }
+    .btn-secondary:hover { border-color: #aaa; color: #111; }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #1a1a1a;
+      color: white;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 999;
+      text-align: center;
+      min-width: 260px;
+      max-width: 90vw;
+      line-height: 1.5;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.err  { background: #c53030; }
+    .toast a    { color: #90cdf4; display: block; margin-top: 6px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>QA 버그 리포터</h1>
+      <p id="headerSub">이지랩 · Mobisoft</p>
+    </div>
+    <div class="session-badge" id="sessionBadge" style="display:none" onclick="resetSession()">세션 변경</div>
+  </header>
+
+  <div class="card">
+
+    <!-- ══ STEP 1: 세션 설정 ══ -->
+    <div id="stepSession">
+      <p class="step-title">QA 세션 시작</p>
+      <p class="step-sub">이번 QA 에픽의 노션 페이지 URL을 붙여넣으면<br>이슈 보드 DB를 자동으로 찾아서 연결합니다.</p>
+
+      <div class="section">
+        <div class="section-title">QA 에픽 페이지 URL *</div>
+        <div class="field">
+          <input type="text" id="pageUrl" placeholder="https://www.notion.so/...">
+          <div class="url-status" id="urlStatus"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">대상 제품 *</div>
+        <div class="product-grid" id="sessionProducts">
+          <div class="product-btn" data-v="이지캡쳐">이지캡쳐</div>
+          <div class="product-btn" data-v="이지다운">이지다운</div>
+          <div class="product-btn" data-v="이지파인더">이지파인더</div>
+          <div class="product-btn" data-v="이지집">이지집</div>
+          <div class="product-btn" data-v="이지메모">이지메모</div>
+          <div class="product-btn" data-v="이지리더">이지리더</div>
+          <div class="product-btn" data-v="이지랩">이지랩</div>
+          <div class="product-btn" data-v="이지캠">이지캠</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">버전 *</div>
+        <div class="field">
+          <input type="text" id="sessionVersion" placeholder="예: 1.0.0">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">기본 플랫폼 *</div>
+        <div class="chips" id="sessionPlatforms">
+          <span class="chip" data-v="Win10">Win10</span>
+          <span class="chip" data-v="Win11">Win11</span>
+          <span class="chip" data-v="VM">VM</span>
+          <span class="chip" data-v="AOS">AOS</span>
+          <span class="chip" data-v="iOS">iOS</span>
+          <span class="chip" data-v="ARM">ARM</span>
+        </div>
+        <div class="env-preview">
+          <div class="label">테스트 환경 미리보기</div>
+          <span id="sessionEnvText">플랫폼을 선택하면 자동 완성됩니다</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="startBtn" onclick="startSession()">QA 시작 →</button>
+    </div>
+
+    <!-- ══ STEP 2: 버그 입력 폼 ══ -->
+    <div id="stepForm">
+      <form id="bugForm">
+
+        <div class="section">
+          <div class="section-title">기본 정보</div>
+          <div class="field">
+            <label>제목 <span class="req">*</span></label>
+            <input type="text" id="title" placeholder="버그 제목을 간결하게 입력하세요">
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>심각도 <span class="req">*</span></label>
+              <select id="severity">
+                <option value="">선택</option>
+                <option value="Blocker">Blocker</option>
+                <option value="Critical">Critical</option>
+                <option value="Major">Major</option>
+                <option value="Minor">Minor</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>발생 시점 <span class="req">*</span></label>
+              <select id="occurrence">
+                <option value="">선택</option>
+                <option value="신규">신규</option>
+                <option value="회귀">회귀</option>
+                <option value="기존">기존</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>버전명</label>
+            <input type="text" id="version" class="auto" placeholder="세션에서 자동 입력">
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">대상 제품 &amp; 플랫폼</div>
+          <div class="field">
+            <label>대상 제품</label>
+            <div class="chips" id="products"></div>
+          </div>
+          <div class="field">
+            <label>플랫폼 <span class="req">*</span></label>
+            <div class="chips" id="platforms">
+              <span class="chip" data-v="Win10">Win10</span>
+              <span class="chip" data-v="Win11">Win11</span>
+              <span class="chip" data-v="VM">VM</span>
+              <span class="chip" data-v="AOS">AOS</span>
+              <span class="chip" data-v="iOS">iOS</span>
+              <span class="chip" data-v="ARM">ARM</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>테스트 환경</label>
+            <input type="text" id="environment" class="auto" readonly>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">테스트 정보</div>
+          <div class="field">
+            <label>사전 조건</label>
+            <textarea id="precondition" placeholder="테스트 전 필요한 조건 또는 환경을 입력하세요"></textarea>
+          </div>
+          <div class="field">
+            <label>테스트 절차 <span class="req">*</span></label>
+            <textarea id="procedure" placeholder="1. &#10;2. &#10;3. " style="min-height:100px"></textarea>
+          </div>
+          <div class="field">
+            <label>테스트 결과 <span class="req">*</span></label>
+            <textarea id="actual" placeholder="실제로 발생한 결과를 입력하세요"></textarea>
+          </div>
+          <div class="field">
+            <label>기대 결과 <span class="req">*</span></label>
+            <textarea id="expected" placeholder="정상적으로 기대되는 결과를 입력하세요"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">Notion에 버그 티켓 생성</button>
+        <button type="button" class="btn-secondary" onclick="resetSession()">세션 변경</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let session = { product: null, version: '', platforms: [], dbId: null };
+
+  function platformsToEnv(platforms) {
+    const hasVM  = platforms.includes('VM');
+    const hasW10 = platforms.includes('Win10');
+    const hasW11 = platforms.includes('Win11');
+    const parts  = [];
+    if (hasVM && hasW11)      parts.push('VM Windows 11');
+    else if (hasVM && hasW10) parts.push('VM Windows 10');
+    else if (hasVM)           parts.push('VM Windows');
+    if (!hasVM && hasW11)     parts.push('Windows 11');
+    if (!hasVM && hasW10)     parts.push('Windows 10');
+    if (platforms.includes('ARM')) parts.push('ARM Windows');
+    if (platforms.includes('AOS')) parts.push('Android (AOS)');
+    if (platforms.includes('iOS')) parts.push('iOS');
+    return parts.join(', ');
+  }
+
+  // URL 입력 시 자동 검증
+  let resolveTimer = null;
+  document.getElementById('pageUrl').addEventListener('input', () => {
+    clearTimeout(resolveTimer);
+    resolveTimer = setTimeout(resolveDb, 600);
+  });
+
+  async function resolveDb() {
+    const url = document.getElementById('pageUrl').value.trim();
+    const statusEl = document.getElementById('urlStatus');
+    if (!url) { statusEl.className = 'url-status'; session.dbId = null; return; }
+
+    statusEl.className = 'url-status loading';
+    statusEl.textContent = '이슈 보드 DB 찾는 중...';
+
+    try {
+      const res  = await fetch('/resolve-db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageUrl: url }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        session.dbId = data.dbId;
+        statusEl.className = 'url-status ok';
+        statusEl.textContent = `이슈 보드 연결 완료`;
+      } else {
+        session.dbId = null;
+        statusEl.className = 'url-status err';
+        statusEl.textContent = data.error || '연결 실패';
+      }
+    } catch {
+      session.dbId = null;
+      statusEl.className = 'url-status err';
+      statusEl.textContent = '네트워크 오류';
+    }
+  }
+
+  // 제품 선택
+  document.querySelectorAll('#sessionProducts .product-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#sessionProducts .product-btn').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+
+  // 세션 플랫폼 → 환경 미리보기
+  document.querySelectorAll('#sessionPlatforms .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      c.classList.toggle('on');
+      const sel = [...document.querySelectorAll('#sessionPlatforms .chip.on')].map(x => x.dataset.v);
+      document.getElementById('sessionEnvText').textContent = platformsToEnv(sel) || '플랫폼을 선택하면 자동 완성됩니다';
+    });
+  });
+
+  // 버그 폼 플랫폼 → 환경 자동 완성
+  document.querySelectorAll('#platforms .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      c.classList.toggle('on');
+      const sel = [...document.querySelectorAll('#platforms .chip.on')].map(x => x.dataset.v);
+      document.getElementById('environment').value = platformsToEnv(sel);
+    });
+  });
+
+  async function startSession() {
+    const product   = document.querySelector('#sessionProducts .product-btn.on');
+    const version   = document.getElementById('sessionVersion').value.trim();
+    const platforms = [...document.querySelectorAll('#sessionPlatforms .chip.on')];
+
+    if (!session.dbId)     { toast('노션 페이지 URL을 먼저 입력해주세요', true); return; }
+    if (!product)          { toast('대상 제품을 선택해주세요', true); return; }
+    if (!version)          { toast('버전을 입력해주세요', true); return; }
+    if (!platforms.length) { toast('플랫폼을 하나 이상 선택해주세요', true); return; }
+
+    session.product   = product.dataset.v;
+    session.version   = version;
+    session.platforms = platforms.map(p => p.dataset.v);
+
+    document.getElementById('products').innerHTML =
+      `<span class="session-chip">${session.product}</span>`;
+    document.getElementById('version').value = session.version;
+
+    document.querySelectorAll('#platforms .chip').forEach(c => {
+      if (session.platforms.includes(c.dataset.v)) c.classList.add('on');
+      else c.classList.remove('on');
+    });
+    const env = platformsToEnv(session.platforms);
+    document.getElementById('environment').value = env;
+
+    document.getElementById('headerSub').textContent =
+      `${session.product} v${session.version} · ${session.platforms.join(', ')}`;
+    document.getElementById('sessionBadge').style.display = 'block';
+
+    document.getElementById('stepSession').style.display = 'none';
+    document.getElementById('stepForm').style.display    = 'block';
+  }
+
+  function resetSession() {
+    session = { product: null, version: '', platforms: [], dbId: null };
+    document.getElementById('stepSession').style.display = 'block';
+    document.getElementById('stepForm').style.display    = 'none';
+    document.getElementById('sessionBadge').style.display = 'none';
+    document.getElementById('headerSub').textContent = '이지랩 · Mobisoft';
+    document.getElementById('pageUrl').value = '';
+    document.getElementById('urlStatus').className = 'url-status';
+    document.getElementById('bugForm').reset();
+    document.querySelectorAll('#platforms .chip').forEach(c => c.classList.remove('on'));
+    document.getElementById('environment').value = '';
+  }
+
+  function richText(val) {
+    return { rich_text: [{ text: { content: val } }] };
+  }
+
+  function toast(msg, isErr = false, link = null) {
+    const el = document.getElementById('toast');
+    el.innerHTML = msg + (link ? `<a href="${link}" target="_blank">Notion에서 열기 →</a>` : '');
+    el.className = 'toast show' + (isErr ? ' err' : '');
+    setTimeout(() => el.className = 'toast', isErr ? 4000 : 6000);
+  }
+
+  document.getElementById('bugForm').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const title      = document.getElementById('title').value.trim();
+    const severity   = document.getElementById('severity').value;
+    const occurrence = document.getElementById('occurrence').value;
+    const platforms  = [...document.querySelectorAll('#platforms .chip.on')].map(c => ({ name: c.dataset.v }));
+    const procedure  = document.getElementById('procedure').value.trim();
+    const actual     = document.getElementById('actual').value.trim();
+    const expected   = document.getElementById('expected').value.trim();
+
+    if (!title || !severity || !occurrence) { toast('필수 항목(*)을 모두 입력해주세요', true); return; }
+    if (!platforms.length)                  { toast('플랫폼을 하나 이상 선택해주세요', true); return; }
+    if (!procedure || !actual || !expected) { toast('테스트 절차 / 결과 / 기대 결과는 필수입니다', true); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '생성 중...';
+
+    const properties = {
+      '이름':        { title: [{ text: { content: title } }] },
+      '심각도':      { select: { name: severity } },
+      '발생 시점':   { select: { name: occurrence } },
+      '대상 제품':   { multi_select: [{ name: session.product }] },
+      '플랫폼':      { multi_select: platforms },
+      '상태':        { status: { name: '시작 전' } },
+      '버전명':      richText(session.version),
+      '테스트 절차': richText(procedure),
+      '테스트 결과': richText(actual),
+      '기대 결과':   richText(expected),
+    };
+
+    const env    = document.getElementById('environment').value.trim();
+    const precond = document.getElementById('precondition').value.trim();
+    if (env)    properties['테스트 환경'] = richText(env);
+    if (precond) properties['사전 조건'] = richText(precond);
+
+    try {
+      const res  = await fetch('/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dbId: session.dbId, properties }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast('버그 티켓이 생성됐습니다!', false, data.url);
+        document.getElementById('title').value        = '';
+        document.getElementById('severity').value     = '';
+        document.getElementById('occurrence').value   = '';
+        document.getElementById('precondition').value = '';
+        document.getElementById('procedure').value    = '';
+        document.getElementById('actual').value       = '';
+        document.getElementById('expected').value     = '';
+      } else {
+        toast(`오류: ${data.message || data.error}`, true);
+      }
+    } catch {
+      toast('네트워크 오류가 발생했습니다', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Notion에 버그 티켓 생성';
+    }
+  });
+</script>
+</body>
+</html>
