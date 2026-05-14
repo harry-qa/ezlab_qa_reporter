@@ -171,35 +171,76 @@
     .chip:hover:not(.on) { border-color: #aaa; color: #111; }
     .chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
 
-    /* 디바이스 리스트 */
-    .device-group { margin-bottom: 12px; }
-    .device-group-label {
-      font-size: 11px;
+    /* 디바이스 드롭다운 */
+    .device-select-wrap { position: relative; }
+    .device-select-trigger {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #999;
+      user-select: none;
+      transition: border-color 0.12s;
+    }
+    .device-select-trigger:hover { border-color: #aaa; }
+    .device-select-trigger.has-val { color: #111; }
+    .device-select-trigger .arrow { font-size: 11px; color: #aaa; transition: transform 0.15s; }
+    .device-select-trigger.open .arrow { transform: rotate(180deg); }
+    .device-select-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: white;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      z-index: 200;
+      overflow: hidden;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .device-select-dropdown.open { display: block; }
+    .drop-group-label {
+      padding: 8px 14px 4px;
+      font-size: 10px;
       font-weight: 700;
       color: #bbb;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 7px;
+      letter-spacing: 0.6px;
     }
-    .device-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-    }
-    .device-chip {
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      border: 1.5px solid #ddd;
-      background: white;
+    .drop-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+    .drop-option {
+      padding: 9px 14px;
       cursor: pointer;
-      transition: all 0.12s;
-      user-select: none;
-      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #333;
+      transition: background 0.08s;
     }
-    .device-chip:hover:not(.on) { border-color: #aaa; color: #111; }
-    .device-chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
+    .drop-option:hover { background: #f5f5f5; }
+    .drop-check {
+      width: 17px; height: 17px;
+      border: 1.5px solid #ddd;
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: transparent;
+      transition: all 0.1s;
+    }
+    .drop-option.on .drop-check {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+      color: white;
+    }
 
     .session-chip {
       display: inline-flex;
@@ -348,15 +389,12 @@
 
         <div class="section">
           <div class="section-title">기본 테스트 디바이스 *</div>
-          <div id="sessionDevices">
-            <div class="device-group">
-              <div class="device-group-label">Windows</div>
-              <div class="device-list" id="sessionWinDevices"></div>
+          <div class="device-select-wrap">
+            <div class="device-select-trigger" id="sessionDeviceTrigger" onclick="toggleDrop('session')">
+              <span id="sessionDeviceSummary">디바이스를 선택하세요</span>
+              <span class="arrow">▼</span>
             </div>
-            <div class="device-group" style="margin-top:12px">
-              <div class="device-group-label">Android (AOS)</div>
-              <div class="device-list" id="sessionAosDevices"></div>
-            </div>
+            <div class="device-select-dropdown" id="sessionDeviceDrop"></div>
           </div>
         </div>
 
@@ -408,15 +446,12 @@
             </div>
             <div class="field">
               <label>테스트 디바이스 <span class="req">*</span></label>
-              <div id="formDevices">
-                <div class="device-group">
-                  <div class="device-group-label">Windows</div>
-                  <div class="device-list" id="formWinDevices"></div>
+              <div class="device-select-wrap">
+                <div class="device-select-trigger" id="formDeviceTrigger" onclick="toggleDrop('form')">
+                  <span id="formDeviceSummary">디바이스를 선택하세요</span>
+                  <span class="arrow">▼</span>
                 </div>
-                <div class="device-group" style="margin-top:10px">
-                  <div class="device-group-label">Android (AOS)</div>
-                  <div class="device-list" id="formAosDevices"></div>
-                </div>
+                <div class="device-select-dropdown" id="formDeviceDrop"></div>
               </div>
             </div>
             <div class="field">
@@ -466,6 +501,7 @@
     windows: [
       { label: 'Win11 Pro (25H2)',     platform: 'Win11' },
       { label: 'Win11 Pro Arm (25H2)', platform: 'ARM'   },
+      { label: 'Win10 Pro (22H2)',     platform: 'Win10'  },
       { label: 'VM Win10 Pro (22H2)',  platform: 'VM'    },
     ],
     aos: [
@@ -517,13 +553,8 @@
       reporterBox.appendChild(chip);
     });
 
-    // 세션 디바이스 칩
-    renderDeviceChips('sessionWinDevices', DEVICES.windows, true);
-    renderDeviceChips('sessionAosDevices', DEVICES.aos,     true);
-
-    // 폼 디바이스 칩
-    renderDeviceChips('formWinDevices', DEVICES.windows, false);
-    renderDeviceChips('formAosDevices', DEVICES.aos,     false);
+    renderDeviceDrop('sessionDeviceDrop', true);
+    renderDeviceDrop('formDeviceDrop', false);
 
     // 제품 선택
     document.querySelectorAll('#sessionProducts .product-btn').forEach(b => {
@@ -541,24 +572,67 @@
     });
   }
 
-  function renderDeviceChips(containerId, devices, isSession) {
-    const container = document.getElementById(containerId);
-    devices.forEach(d => {
-      const chip = document.createElement('span');
-      chip.className       = 'device-chip';
-      chip.textContent     = d.label;
-      chip.dataset.label   = d.label;
-      chip.dataset.platform = d.platform;
-      chip.addEventListener('click', () => {
-        chip.classList.toggle('on');
-        if (!isSession) updateFormEnv();
+  function renderDeviceDrop(dropId, isSession) {
+    const drop = document.getElementById(dropId);
+    const prefix = isSession ? 'session' : 'form';
+    const groups = [
+      { label: 'Windows', devices: DEVICES.windows },
+      { label: 'Android (AOS)', devices: DEVICES.aos },
+    ];
+    groups.forEach((g, gi) => {
+      if (gi > 0) { const div = document.createElement('div'); div.className = 'drop-divider'; drop.appendChild(div); }
+      const hdr = document.createElement('div'); hdr.className = 'drop-group-label'; hdr.textContent = g.label; drop.appendChild(hdr);
+      g.devices.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'drop-option';
+        row.dataset.label    = d.label;
+        row.dataset.platform = d.platform;
+        const chk = document.createElement('span'); chk.className = 'drop-check'; chk.textContent = '✓';
+        const lbl = document.createElement('span'); lbl.textContent = d.label;
+        row.appendChild(chk); row.appendChild(lbl);
+        row.addEventListener('click', () => {
+          row.classList.toggle('on');
+          updateDropSummary(prefix);
+          if (!isSession) updateFormEnv();
+        });
+        drop.appendChild(row);
       });
-      container.appendChild(chip);
     });
   }
 
+  function updateDropSummary(prefix) {
+    const drop     = document.getElementById(prefix + 'DeviceDrop');
+    const trigger  = document.getElementById(prefix + 'DeviceTrigger');
+    const summary  = document.getElementById(prefix + 'DeviceSummary');
+    const selected = [...drop.querySelectorAll('.drop-option.on')].map(r => r.dataset.label);
+    if (selected.length === 0) {
+      summary.textContent = '디바이스를 선택하세요';
+      trigger.classList.remove('has-val');
+    } else {
+      summary.textContent = selected.join(', ');
+      trigger.classList.add('has-val');
+    }
+  }
+
+  function toggleDrop(prefix) {
+    const drop    = document.getElementById(prefix + 'DeviceDrop');
+    const trigger = document.getElementById(prefix + 'DeviceTrigger');
+    const isOpen  = drop.classList.toggle('open');
+    trigger.classList.toggle('open', isOpen);
+  }
+
+  document.addEventListener('click', e => {
+    ['session', 'form'].forEach(prefix => {
+      const trigger = document.getElementById(prefix + 'DeviceTrigger');
+      if (trigger && !trigger.closest('.device-select-wrap').contains(e.target)) {
+        document.getElementById(prefix + 'DeviceDrop').classList.remove('open');
+        trigger.classList.remove('open');
+      }
+    });
+  });
+
   function updateFormEnv() {
-    const selected = [...document.querySelectorAll('#formWinDevices .device-chip.on, #formAosDevices .device-chip.on')]
+    const selected = [...document.querySelectorAll('#formDeviceDrop .drop-option.on')]
       .map(c => c.dataset.label);
     document.getElementById('environment').value = selected.join(', ');
   }
@@ -598,7 +672,7 @@
   function startSession() {
     const product   = document.querySelector('#sessionProducts .product-btn.on');
     const version   = document.getElementById('sessionVersion').value.trim();
-    const devices   = [...document.querySelectorAll('#sessionWinDevices .device-chip.on, #sessionAosDevices .device-chip.on')];
+    const devices   = [...document.querySelectorAll('#sessionDeviceDrop .drop-option.on')];
 
     if (!session.reporter) { toast('보고자를 선택해주세요', true); return; }
     if (!session.dbId)     { toast('노션 페이지 URL을 먼저 입력해주세요', true); return; }
@@ -616,10 +690,11 @@
     document.getElementById('version').value = session.version;
 
     // 폼 디바이스 세션 기본값 선택
-    document.querySelectorAll('#formWinDevices .device-chip, #formAosDevices .device-chip').forEach(c => {
-      if (session.devices.find(d => d.label === c.dataset.label)) c.classList.add('on');
-      else c.classList.remove('on');
+    document.querySelectorAll('#formDeviceDrop .drop-option').forEach(r => {
+      if (session.devices.find(d => d.label === r.dataset.label)) r.classList.add('on');
+      else r.classList.remove('on');
     });
+    updateDropSummary('form');
     updateFormEnv();
 
     document.getElementById('headerSub').textContent =
@@ -639,7 +714,9 @@
     document.getElementById('pageUrl').value         = '';
     document.getElementById('urlStatus').className   = 'url-status';
     document.getElementById('bugForm').reset();
-    document.querySelectorAll('.device-chip, .chip').forEach(c => c.classList.remove('on'));
+    document.querySelectorAll('.drop-option, .chip').forEach(c => c.classList.remove('on'));
+    updateDropSummary('session');
+    updateDropSummary('form');
     document.getElementById('environment').value = '';
   }
 
@@ -664,7 +741,7 @@
     const actual     = document.getElementById('actual').value.trim();
     const expected   = document.getElementById('expected').value.trim();
 
-    const selectedDevices = [...document.querySelectorAll('#formWinDevices .device-chip.on, #formAosDevices .device-chip.on')];
+    const selectedDevices = [...document.querySelectorAll('#formDeviceDrop .drop-option.on')];
 
     if (!title || !severity || !occurrence) { toast('필수 항목(*)을 모두 입력해주세요', true); return; }
     if (!selectedDevices.length)            { toast('테스트 디바이스를 선택해주세요', true); return; }
