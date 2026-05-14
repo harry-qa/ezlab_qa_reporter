@@ -250,6 +250,11 @@
       <p class="step-sub">이번 QA 에픽의 노션 페이지 URL을 붙여넣으면<br>이슈 보드 DB를 자동으로 찾아서 연결합니다.</p>
 
       <div class="section">
+        <div class="section-title">보고자 *</div>
+        <div class="chips" id="reporterChips"></div>
+      </div>
+
+      <div class="section">
         <div class="section-title">QA 에픽 페이지 URL *</div>
         <div class="field">
           <input type="text" id="pageUrl" placeholder="https://www.notion.so/...">
@@ -388,7 +393,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {} };
+  const REPORTERS = [
+    { name: '이수빈', id: '31fd872b-594c-81d5-b6ea-0002de903282' },
+    { name: '박주철', id: '333d872b-594c-8169-8e13-000274766e61' },
+  ];
+
+  let session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {}, reporter: null };
 
   function platformsToEnv(platforms) {
     const hasVM  = platforms.includes('VM');
@@ -405,6 +415,21 @@
     if (platforms.includes('iOS')) parts.push('iOS');
     return parts.join(', ');
   }
+
+  // 보고자 칩 렌더링
+  const reporterBox = document.getElementById('reporterChips');
+  REPORTERS.forEach(r => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = r.name;
+    chip.dataset.id = r.id;
+    chip.addEventListener('click', () => {
+      reporterBox.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      session.reporter = { name: r.name, id: r.id };
+    });
+    reporterBox.appendChild(chip);
+  });
 
   // URL 입력 시 자동 검증
   let resolveTimer = null;
@@ -476,6 +501,7 @@
     const version   = document.getElementById('sessionVersion').value.trim();
     const platforms = [...document.querySelectorAll('#sessionPlatforms .chip.on')];
 
+    if (!session.reporter) { toast('보고자를 선택해주세요', true); return; }
     if (!session.dbId)     { toast('노션 페이지 URL을 먼저 입력해주세요', true); return; }
     if (!product)          { toast('대상 제품을 선택해주세요', true); return; }
     if (!version)          { toast('버전을 입력해주세요', true); return; }
@@ -497,7 +523,7 @@
     document.getElementById('environment').value = env;
 
     document.getElementById('headerSub').textContent =
-      `${session.product} v${session.version} · ${session.platforms.join(', ')}`;
+      `${session.product} v${session.version} · ${session.reporter.name} · ${session.platforms.join(', ')}`;
     document.getElementById('sessionBadge').style.display = 'block';
 
     document.getElementById('stepSession').style.display = 'none';
@@ -505,7 +531,8 @@
   }
 
   function resetSession() {
-    session = { product: null, version: '', platforms: [], dbId: null };
+    session = { product: null, version: '', platforms: [], dbId: null, fieldTypes: {}, reporter: null };
+    reporterBox.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
     document.getElementById('stepSession').style.display = 'block';
     document.getElementById('stepForm').style.display    = 'none';
     document.getElementById('sessionBadge').style.display = 'none';
@@ -568,7 +595,8 @@
     const env    = document.getElementById('environment').value.trim();
     const precond = document.getElementById('precondition').value.trim();
     if (env)    properties['테스트 환경'] = richText(env);
-    if (precond) properties['사전 조건'] = richText(precond);
+    if (precond) properties['사전 조건']  = richText(precond);
+    if (session.reporter) properties['보고자'] = { people: [{ id: session.reporter.id }] };
 
     try {
       const res  = await fetch('/create', {
