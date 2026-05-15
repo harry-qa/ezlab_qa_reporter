@@ -2,6 +2,6 @@
   "rewrites": [
     { "source": "/resolve-db", "destination": "/api/resolve-db" },
     { "source": "/create",     "destination": "/api/create" },
-    { "source": "/",           "destination": "/index.html" }
+    { "source": "/",           "destination": "/bug-reporter.html" }
   ]
 }

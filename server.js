@@ -100,9 +100,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET / — index.html
-  if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
-    const file = fs.readFileSync(path.join(__dirname, 'index.html'));
+  // GET / — bug-reporter.html
+  if (req.method === 'GET' && (req.url === '/' || req.url === '/bug-reporter.html')) {
+    const file = fs.readFileSync(path.join(__dirname, 'bug-reporter.html'));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(file);
     return;
