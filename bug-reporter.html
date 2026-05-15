@@ -171,6 +171,26 @@
     .chip:hover:not(.on) { border-color: #aaa; color: #111; }
     .chip.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
 
+    .reporter-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .reporter-tab {
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1.5px solid #e0e0e0;
+      background: #fafafa;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.12s;
+      font-family: inherit;
+    }
+    .reporter-tab:hover:not(.on) { border-color: #bbb; color: #444; }
+    .reporter-tab.on { border-color: #1a1a1a; background: #1a1a1a; color: white; }
+
     /* 디바이스 드롭다운 */
     .device-select-wrap { position: relative; }
     .device-select-trigger {
@@ -355,6 +375,10 @@
 
         <div class="section">
           <div class="section-title">보고자 *</div>
+          <div class="reporter-tabs" id="reporterTabs">
+            <button class="reporter-tab on" data-group="QA">QA</button>
+            <button class="reporter-tab" data-group="기획">기획</button>
+          </div>
           <div class="chips" id="reporterChips"></div>
         </div>
 
@@ -492,10 +516,18 @@
 
 <script>
   // ── 데이터 정의 ──
-  const REPORTERS = [
-    { name: '이수빈', id: '31fd872b-594c-81d5-b6ea-0002de903282' },
-    { name: '박주철', id: '333d872b-594c-8169-8e13-000274766e61' },
-  ];
+  const REPORTER_GROUPS = {
+    'QA':  [
+      { name: '이수빈', id: '31fd872b-594c-81d5-b6ea-0002de903282' },
+      { name: '박주철', id: '333d872b-594c-8169-8e13-000274766e61' },
+    ],
+    '기획': [
+      { name: '구성범', id: '359d872b-594c-81d1-818e-0002d9ba50e9' },
+      { name: '최동찬', id: 'c05fad9c-d0a0-450a-912a-fe190d54739d' },
+      { name: '강진주', id: '27fd872b-594c-819c-a421-0002e1e9f412' },
+      { name: '양지윤', id: '277d872b-594c-8195-b7e5-0002ebf1fddb' },
+    ],
+  };
 
   const DEVICES = {
     windows: [
@@ -538,10 +570,11 @@
     initApp();
   }
 
-  function initApp() {
-    // 보고자 칩
+  function renderReporterChips(group) {
     const reporterBox = document.getElementById('reporterChips');
-    REPORTERS.forEach(r => {
+    reporterBox.innerHTML = '';
+    session.reporter = null;
+    REPORTER_GROUPS[group].forEach(r => {
       const chip = document.createElement('span');
       chip.className   = 'chip';
       chip.textContent = r.name;
@@ -552,6 +585,18 @@
       });
       reporterBox.appendChild(chip);
     });
+  }
+
+  function initApp() {
+    // 보고자 탭 + 칩
+    document.getElementById('reporterTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.reporter-tab');
+      if (!tab) return;
+      document.querySelectorAll('.reporter-tab').forEach(t => t.classList.remove('on'));
+      tab.classList.add('on');
+      renderReporterChips(tab.dataset.group);
+    });
+    renderReporterChips('QA');
 
     renderDeviceDrop('sessionDeviceDrop', true);
     renderDeviceDrop('formDeviceDrop', false);
